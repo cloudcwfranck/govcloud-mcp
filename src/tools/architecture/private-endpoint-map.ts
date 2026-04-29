@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { ARCHITECTURE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const privateEndpointTool = {
   name: 'private_endpoint_map',
@@ -26,23 +27,22 @@ export const privateEndpointTool = {
 };
 
 const Schema = z.object({
-  services: z.array(z.string()).min(1),
+  services: z.array(z.string().max(500)).min(1).max(50),
   impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
-  vnetCidr: z.string().optional(),
-  dnsZoneSubscriptionId: z.string().optional(),
+  vnetCidr: z.string().max(500).optional(),
+  dnsZoneSubscriptionId: z.string().max(500).optional(),
 });
 
 export async function handlePrivateEndpoint(args: unknown): Promise<string> {
-  const { services, impactLevel, vnetCidr, dnsZoneSubscriptionId } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: ARCHITECTURE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate the complete private endpoint architecture for these Azure services at ${impactLevel}.
+  return runTool('private_endpoint_map', args, Schema, async ({ services, impactLevel, vnetCidr, dnsZoneSubscriptionId }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('private_endpoint_map'),
+      system: ARCHITECTURE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate the complete private endpoint architecture for these Azure services at ${impactLevel}.
 
 **Services:** ${services.join(', ')}
 **Impact Level:** ${impactLevel}
@@ -60,9 +60,10 @@ Provide:
 8. GCC High-specific endpoint differences where applicable
 
 Use actual Azure private link DNS zone names and ARM resource types.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

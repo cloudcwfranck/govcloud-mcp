@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { callSiteApi } from '../../client.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const bicepAnalyzeTool = {
   name: 'bicep_analyze',
@@ -23,7 +24,7 @@ export const bicepAnalyzeTool = {
 };
 
 const Schema = z.object({
-  bicepCode: z.string().min(1),
+  bicepCode: z.string().min(1).max(20000),
   targetLevel: z
     .enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5'])
     .default('fedramp-high'),
@@ -141,12 +142,12 @@ function formatAnalysis(data: AnalysisResult, targetLevel: string): string {
 }
 
 export async function handleBicepAnalyze(args: unknown): Promise<string> {
-  const { bicepCode, targetLevel } = Schema.parse(args);
+  return runTool('bicep_analyze', args, Schema, async ({ bicepCode, targetLevel }) => {
+    const data = (await callSiteApi('/api/bicep-analyze', {
+      bicepCode,
+      targetLevel,
+    })) as AnalysisResult;
 
-  const data = (await callSiteApi('/api/bicep-analyze', {
-    bicepCode,
-    targetLevel,
-  })) as AnalysisResult;
-
-  return formatAnalysis(data, targetLevel);
+    return formatAnalysis(data, targetLevel ?? 'fedramp-high');
+  });
 }

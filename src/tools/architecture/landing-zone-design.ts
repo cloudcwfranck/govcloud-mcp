@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { ARCHITECTURE_SYSTEM } from '../../prompts/system-prompts.js';
 import { landingZoneTemplate } from '../../prompts/templates.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const landingZoneTool = {
   name: 'landing_zone_design',
@@ -47,20 +48,21 @@ const Schema = z.object({
   targetImpactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
   estimatedUsers: z.number().optional(),
   connectedToNIPR: z.boolean().optional(),
-  existingEnclaves: z.string().optional(),
+  existingEnclaves: z.string().max(500).optional(),
   cssp: z.enum(['azure-government', 'azure-gcc-high']).default('azure-gcc-high'),
 });
 
 export async function handleLandingZone(args: unknown): Promise<string> {
-  const params = Schema.parse(args);
-  const prompt = landingZoneTemplate(params);
+  return runTool('landing_zone_design', args, Schema, async (params) => {
+    const prompt = landingZoneTemplate({ ...params, cssp: params.cssp ?? 'azure-gcc-high' });
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: ARCHITECTURE_SYSTEM,
-    messages: [{ role: 'user', content: prompt }],
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('landing_zone_design'),
+      system: ARCHITECTURE_SYSTEM,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   });
-
-  return response.content[0].type === 'text' ? response.content[0].text : '';
 }

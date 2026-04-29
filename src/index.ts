@@ -10,6 +10,8 @@ import {
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { allTools, handleToolCall } from './tools/index.js';
+import { logger } from './utils/logger.js';
+import { formatErrorForMCP } from './utils/errors.js';
 
 const RESOURCES = [
   {
@@ -51,17 +53,49 @@ function loadResource(filename: string): string {
   }
 }
 
-const server = new Server(
-  {
-    name: 'govcloud-mcp',
-    version: '1.0.0',
-  },
-  {
-    capabilities: {
-      tools: {},
-      resources: {},
-    },
+// CJS __dirname substitute (tsconfig module: commonjs)
+declare const __dirname: string;
+
+async function validateEnvironment(): Promise<void> {
+  const errors: string[] = [];
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    errors.push('ANTHROPIC_API_KEY is not set');
+  } else if (!process.env.ANTHROPIC_API_KEY.startsWith('sk-ant-')) {
+    errors.push('ANTHROPIC_API_KEY appears invalid (should start with sk-ant-)');
   }
+
+  const resourceFiles = [
+    'nist-800-53-rev5.json',
+    'azure-compliance-map.json',
+    'ironbank-registry.json',
+    'fedramp-baselines.json',
+  ];
+
+  for (const file of resourceFiles) {
+    try {
+      const data = JSON.parse(readFileSync(join(__dirname, 'resources', file), 'utf-8'));
+      if (!data || typeof data !== 'object') {
+        errors.push(`Resource file invalid: ${file}`);
+      }
+    } catch {
+      errors.push(`Resource file missing or corrupt: ${file}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    process.stderr.write('GovCloud MCP startup errors:\n');
+    errors.forEach((e) => process.stderr.write(`  ✗ ${e}\n`));
+    process.stderr.write('\nFix these issues before using the MCP server.\n');
+    process.exit(1);
+  }
+
+  logger.info('server', 'Startup validation passed', { toolCount: allTools.length });
+}
+
+const server = new Server(
+  { name: 'govcloud-mcp', version: '1.0.0' },
+  { capabilities: { tools: {}, resources: {} } }
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -73,13 +107,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     const result = await handleToolCall(name, args ?? {});
-    return {
-      content: [{ type: 'text', text: result }],
-    };
+    return { content: [{ type: 'text', text: result }] };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    logger.error('server', `Tool call failed: ${name}`, error);
+    const userMessage = formatErrorForMCP(error, name);
     return {
-      content: [{ type: 'text', text: `Error: ${message}` }],
+      content: [{ type: 'text', text: userMessage }],
       isError: true,
     };
   }
@@ -88,10 +121,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
     resources: RESOURCES.map(({ uri, name, description, mimeType }) => ({
-      uri,
-      name,
-      description,
-      mimeType,
+      uri, name, description, mimeType,
     })),
   };
 });
@@ -99,23 +129,19 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
   const resource = RESOURCES.find((r) => r.uri === uri);
-
-  if (!resource) {
-    throw new Error(`Resource not found: ${uri}`);
-  }
+  if (!resource) throw new Error(`Resource not found: ${uri}`);
 
   return {
-    contents: [
-      {
-        uri,
-        mimeType: resource.mimeType,
-        text: loadResource(resource.file),
-      },
-    ],
+    contents: [{
+      uri,
+      mimeType: resource.mimeType,
+      text: loadResource(resource.file),
+    }],
   };
 });
 
 async function main() {
+  await validateEnvironment();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write('GovCloud MCP Server running on stdio\n');

@@ -1,0 +1,36 @@
+# Source files (only dist/ is published)
+src/
+tests/
+scripts/
+
+# Config files
+tsconfig.json
+vitest.config.ts
+.env
+.env.local
+.env.*
+.env.example
+
+# Development
+*.test.ts
+*.spec.ts
+.github/
+.vscode/
+
+# Secrets — never publish these
+*.key
+*.pem
+*.crt
+githubkey
+githubkey.pub
+*secret*
+
+# Coverage reports
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Node
+node_modules/

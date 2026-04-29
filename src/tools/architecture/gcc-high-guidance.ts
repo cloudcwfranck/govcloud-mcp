@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const gccHighTool = {
   name: 'gcc_high_guidance',
@@ -16,8 +17,8 @@ export const gccHighTool = {
 };
 
 const Schema = z.object({
-  service: z.string(),
-  scenario: z.string().optional(),
+  service: z.string().max(500),
+  scenario: z.string().max(500).optional(),
 });
 
 const GCC_SYSTEM = `${BASE_SYSTEM_PROMPT}
@@ -36,22 +37,22 @@ Be brutally honest about limitations. Engineers in DoD environments need the tru
 - Timeline for feature parity with commercial (if known/estimated)`;
 
 export async function handleGccHigh(args: unknown): Promise<string> {
-  const { service, scenario } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: GCC_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Provide complete GCC High guidance for: **${service}**
+  return runTool('gcc_high_guidance', args, Schema, async ({ service, scenario }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('gcc_high_guidance'),
+      system: GCC_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Provide complete GCC High guidance for: **${service}**
 ${scenario ? `\nScenario: ${scenario}` : ''}
 
 Focus on what's different, what's broken, what's undocumented, and what every GCC High engineer needs to know before they spend days debugging something that should have been a 5-minute warning.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

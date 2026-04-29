@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PIPELINE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const signingConfigTool = {
   name: 'signing_config',
@@ -35,21 +36,20 @@ export const signingConfigTool = {
 const Schema = z.object({
   signingMethod: z.enum(['cosign-keyless', 'cosign-key', 'notary-v2', 'dod-pki']),
   pipelineType: z.enum(['gitlab-ci', 'github-actions', 'tekton', 'jenkins']),
-  registry: z.string().default('registry1.dso.mil'),
+  registry: z.string().max(500).default('registry1.dso.mil'),
   enforceInCluster: z.boolean().default(true),
 });
 
 export async function handleSigningConfig(args: unknown): Promise<string> {
-  const { signingMethod, pipelineType, registry, enforceInCluster } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 5120,
-    system: PIPELINE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate complete artifact signing configuration using **${signingMethod}** for **${pipelineType}** pipelines targeting registry **${registry}**.
+  return runTool('signing_config', args, Schema, async ({ signingMethod, pipelineType, registry, enforceInCluster }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('signing_config'),
+      system: PIPELINE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate complete artifact signing configuration using **${signingMethod}** for **${pipelineType}** pipelines targeting registry **${registry}**.
 ${enforceInCluster ? '\nAlso generate Kubernetes admission controller configuration to enforce signed images cluster-wide.' : ''}
 
 Provide:
@@ -94,9 +94,10 @@ ${enforceInCluster ? `5. **Kubernetes Admission Enforcement**:
 8. **Iron Bank Verification** — how to verify Iron Bank images specifically with their Cosign public key
 
 Use production-ready commands with actual Sigstore endpoints and realistic key formats.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const oscalFragmentTool = {
   name: 'oscal_fragment',
@@ -36,11 +37,11 @@ export const oscalFragmentTool = {
 };
 
 const Schema = z.object({
-  resourceDescription: z.string(),
-  controlIds: z.array(z.string()).min(1),
+  resourceDescription: z.string().max(500),
+  controlIds: z.array(z.string().max(500)).min(1).max(20),
   format: z.enum(['json', 'xml']).default('json'),
-  systemId: z.string().optional(),
-  componentName: z.string().optional(),
+  systemId: z.string().max(500).optional(),
+  componentName: z.string().max(500).optional(),
 });
 
 const OSCAL_SYSTEM = `${BASE_SYSTEM_PROMPT}
@@ -57,16 +58,15 @@ You generate valid OSCAL 1.1.2 compliant fragments for eMASS import. Requirement
 - OSCAL output must be syntactically valid — it will be imported into eMASS`;
 
 export async function handleOscalFragment(args: unknown): Promise<string> {
-  const { resourceDescription, controlIds, format, systemId, componentName } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: OSCAL_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate an OSCAL 1.1.2 SSP fragment in ${format.toUpperCase()} format.
+  return runTool('oscal_fragment', args, Schema, async ({ resourceDescription, controlIds, format, systemId, componentName }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('oscal_fragment'),
+      system: OSCAL_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate an OSCAL 1.1.2 SSP fragment in ${(format ?? 'json').toUpperCase()} format.
 
 **Resource/Configuration:** ${resourceDescription}
 **Controls to Cover:** ${controlIds.join(', ')}
@@ -74,9 +74,10 @@ ${systemId ? `**eMASS System ID:** ${systemId}` : ''}
 ${componentName ? `**Component Name:** ${componentName}` : ''}
 
 Generate the complete OSCAL fragment with implemented-requirements, by-components, and set-parameters sections.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

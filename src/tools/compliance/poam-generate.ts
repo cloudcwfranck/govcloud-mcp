@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
 import { poamTemplate } from '../../prompts/templates.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const poamGenerateTool = {
   name: 'poam_generate',
@@ -30,9 +31,9 @@ export const poamGenerateTool = {
 };
 
 const Schema = z.object({
-  gaps: z.string().min(1),
-  systemName: z.string(),
-  systemOwner: z.string().default('Information System Owner'),
+  gaps: z.string().min(1).max(2000),
+  systemName: z.string().max(500),
+  systemOwner: z.string().max(500).default('Information System Owner'),
   scheduledCompletionDays: z.number().default(90),
   impactLevel: z.enum(['moderate', 'high', 'il4', 'il5']),
 });
@@ -50,16 +51,16 @@ You are generating eMASS-compatible POA&M entries. Requirements:
 - Status: Open (for all new entries)`;
 
 export async function handlePoamGenerate(args: unknown): Promise<string> {
-  const { gaps, systemName, systemOwner, scheduledCompletionDays, impactLevel } = Schema.parse(args);
+  return runTool('poam_generate', args, Schema, async ({ gaps, systemName, systemOwner, scheduledCompletionDays, impactLevel }) => {
+    const prompt = poamTemplate(gaps, systemName, systemOwner ?? 'Information System Owner', scheduledCompletionDays ?? 90, impactLevel);
 
-  const prompt = poamTemplate(gaps, systemName, systemOwner, scheduledCompletionDays, impactLevel);
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('poam_generate'),
+      system: POAM_SYSTEM,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: POAM_SYSTEM,
-    messages: [{ role: 'user', content: prompt }],
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   });
-
-  return response.content[0].type === 'text' ? response.content[0].text : '';
 }

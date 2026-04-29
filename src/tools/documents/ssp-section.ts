@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { DOCUMENT_SYSTEM } from '../../prompts/system-prompts.js';
 import { sspSectionTemplate } from '../../prompts/templates.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const sspSectionTool = {
   name: 'ssp_section',
@@ -58,26 +59,25 @@ const Schema = z.object({
     'security-categorization',
     'control-summary',
   ]),
-  systemName: z.string(),
-  systemDescription: z.string(),
-  azureServices: z.array(z.string()).min(1),
+  systemName: z.string().max(500),
+  systemDescription: z.string().max(2000),
+  azureServices: z.array(z.string().max(500)).min(1).max(50),
   impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
-  additionalContext: z.string().optional(),
+  additionalContext: z.string().max(500).optional(),
 });
 
 export async function handleSspSection(args: unknown): Promise<string> {
-  const { section, systemName, systemDescription, azureServices, impactLevel, additionalContext } =
-    Schema.parse(args);
+  return runTool('ssp_section', args, Schema, async ({ section, systemName, systemDescription, azureServices, impactLevel, additionalContext }) => {
+    const systemInfo = `${systemName} — ${systemDescription}`;
+    const prompt = sspSectionTemplate(section, systemInfo, azureServices, impactLevel, additionalContext);
 
-  const systemInfo = `${systemName} — ${systemDescription}`;
-  const prompt = sspSectionTemplate(section, systemInfo, azureServices, impactLevel, additionalContext);
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('ssp_section'),
+      system: DOCUMENT_SYSTEM,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: DOCUMENT_SYSTEM,
-    messages: [{ role: 'user', content: prompt }],
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   });
-
-  return response.content[0].type === 'text' ? response.content[0].text : '';
 }
