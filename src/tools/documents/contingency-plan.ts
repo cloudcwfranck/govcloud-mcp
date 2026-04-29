@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { DOCUMENT_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const contingencyPlanTool = {
   name: 'contingency_plan',
@@ -38,27 +39,25 @@ export const contingencyPlanTool = {
 };
 
 const Schema = z.object({
-  systemName: z.string(),
-  systemDescription: z.string(),
-  azureServices: z.array(z.string()).min(1),
+  systemName: z.string().max(500),
+  systemDescription: z.string().max(2000),
+  azureServices: z.array(z.string().max(500)).min(1).max(50),
   impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
   rtoHours: z.number().default(4),
   rpoHours: z.number().default(1),
-  systemOwner: z.string().default('System Owner'),
+  systemOwner: z.string().max(500).default('System Owner'),
 });
 
 export async function handleContingencyPlan(args: unknown): Promise<string> {
-  const { systemName, systemDescription, azureServices, impactLevel, rtoHours, rpoHours, systemOwner } =
-    Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 8192,
-    system: DOCUMENT_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate a complete NIST SP 800-34 Contingency Plan for **${systemName}** at **${impactLevel}**.
+  return runTool('contingency_plan', args, Schema, async ({ systemName, systemDescription, azureServices, impactLevel, rtoHours, rpoHours, systemOwner }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('contingency_plan'),
+      system: DOCUMENT_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate a complete NIST SP 800-34 Contingency Plan for **${systemName}** at **${impactLevel}**.
 
 **System:** ${systemName}
 **Description:** ${systemDescription}
@@ -116,9 +115,10 @@ Generate a complete, eMASS-ready Contingency Plan with these sections:
 - Update triggers (significant changes, annual review, after exercises)
 
 Write in formal third-person government document style. Include actual Azure recovery commands and service-specific procedures.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

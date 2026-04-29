@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PIPELINE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const pipelineAuditTool = {
   name: 'pipeline_audit',
@@ -34,24 +35,23 @@ export const pipelineAuditTool = {
 };
 
 const Schema = z.object({
-  pipelineYaml: z.string().min(1),
+  pipelineYaml: z.string().min(1).max(20000),
   pipelineType: z.enum(['gitlab-ci', 'github-actions', 'tekton', 'jenkins']),
   targetLevel: z.enum(['il2', 'il4', 'il5']).default('il4'),
-  scanTools: z.array(z.string()).default([]),
+  scanTools: z.array(z.string().max(500)).max(50).default([]),
 });
 
 export async function handlePipelineAudit(args: unknown): Promise<string> {
-  const { pipelineYaml, pipelineType, targetLevel, scanTools } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: PIPELINE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Audit this ${pipelineType} pipeline for ${targetLevel} DevSecOps compliance.
-${scanTools.length > 0 ? `\n**Current Scan Tools:** ${scanTools.join(', ')}` : ''}
+  return runTool('pipeline_audit', args, Schema, async ({ pipelineYaml, pipelineType, targetLevel, scanTools }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('pipeline_audit'),
+      system: PIPELINE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Audit this ${pipelineType} pipeline for ${targetLevel} DevSecOps compliance.
+${(scanTools ?? []).length > 0 ? `\n**Current Scan Tools:** ${(scanTools ?? []).join(', ')}` : ''}
 
 \`\`\`yaml
 ${pipelineYaml}
@@ -94,9 +94,10 @@ Provide:
    - DoD-approved SAST tools (Fortify, Checkmarx)
 
 7. **Line References** — specific line numbers from the original pipeline with issues`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

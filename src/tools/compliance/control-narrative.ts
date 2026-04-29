@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
 import { controlNarrativeTemplate } from '../../prompts/templates.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const controlNarrativeTool = {
   name: 'control_narrative',
@@ -34,13 +35,16 @@ export const controlNarrativeTool = {
 };
 
 const Schema = z.object({
-  controlId: z.string(),
-  systemName: z.string(),
-  systemDescription: z.string(),
-  azureServices: z.array(z.string()),
+  controlId: z.string().regex(
+    /^[A-Z]{2}-\d{1,2}(\(\d{1,2}\))?$/,
+    'Control ID must be NIST format: e.g. AC-2, SC-28, AC-2(1)'
+  ),
+  systemName: z.string().max(500),
+  systemDescription: z.string().max(2000),
+  azureServices: z.array(z.string().max(500)).max(50),
   cspLevel: z.enum(['azure-commercial', 'azure-government', 'azure-gcc-high']),
   impactLevel: z.enum(['low', 'moderate', 'high', 'il4', 'il5']),
-  organizationName: z.string().optional(),
+  organizationName: z.string().max(500).optional(),
 });
 
 const NARRATIVE_SYSTEM = `${BASE_SYSTEM_PROMPT}
@@ -59,25 +63,24 @@ Requirements:
 - This will be read by an Authorizing Official. Make it precise.`;
 
 export async function handleControlNarrative(args: unknown): Promise<string> {
-  const { controlId, systemName, systemDescription, azureServices, cspLevel, impactLevel, organizationName } =
-    Schema.parse(args);
+  return runTool('control_narrative', args, Schema, async ({ controlId, systemName, systemDescription, azureServices, cspLevel, impactLevel, organizationName }) => {
+    const prompt = controlNarrativeTemplate(
+      controlId,
+      systemName,
+      systemDescription,
+      azureServices,
+      cspLevel,
+      impactLevel,
+      organizationName
+    );
 
-  const prompt = controlNarrativeTemplate(
-    controlId,
-    systemName,
-    systemDescription,
-    azureServices,
-    cspLevel,
-    impactLevel,
-    organizationName
-  );
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('control_narrative'),
+      system: NARRATIVE_SYSTEM,
+      messages: [{ role: 'user', content: prompt }],
+    });
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: NARRATIVE_SYSTEM,
-    messages: [{ role: 'user', content: prompt }],
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   });
-
-  return response.content[0].type === 'text' ? response.content[0].text : '';
 }

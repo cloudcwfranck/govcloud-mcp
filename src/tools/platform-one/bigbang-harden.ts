@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PLATFORM_ONE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const bigbangHardenTool = {
   name: 'bigbang_harden',
@@ -27,28 +28,27 @@ export const bigbangHardenTool = {
 };
 
 const Schema = z.object({
-  baseValues: z.string().optional(),
+  baseValues: z.string().max(20000).optional(),
   targetLevel: z.enum(['il4', 'il5']),
-  enabledAddons: z.array(z.string()).default(['istio', 'monitoring', 'logging', 'policy']),
-  clusterName: z.string().default('bb-cluster'),
-  registryUrl: z.string().default('registry1.dso.mil'),
+  enabledAddons: z.array(z.string().max(500)).max(50).default(['istio', 'monitoring', 'logging', 'policy']),
+  clusterName: z.string().max(500).default('bb-cluster'),
+  registryUrl: z.string().max(500).default('registry1.dso.mil'),
 });
 
 export async function handleBigbangHarden(args: unknown): Promise<string> {
-  const { baseValues, targetLevel, enabledAddons, clusterName, registryUrl } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 8192,
-    system: PLATFORM_ONE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate a fully hardened Big Bang values.yaml for ${targetLevel}.
+  return runTool('bigbang_harden', args, Schema, async ({ baseValues, targetLevel, enabledAddons, clusterName, registryUrl }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('bigbang_harden'),
+      system: PLATFORM_ONE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate a fully hardened Big Bang values.yaml for ${targetLevel}.
 
 **Cluster Name:** ${clusterName}
 **Registry:** ${registryUrl}
-**Enabled Addons:** ${enabledAddons.join(', ')}
+**Enabled Addons:** ${(enabledAddons ?? ['istio', 'monitoring', 'logging', 'policy']).join(', ')}
 ${baseValues ? `\n**Base Values to Start From:**\n\`\`\`yaml\n${baseValues}\n\`\`\`` : ''}
 
 Provide:
@@ -67,9 +67,10 @@ Provide:
 5. **Post-deployment Verification Commands** to confirm ${targetLevel} compliance
 
 Use realistic Iron Bank registry paths and include actual STIG/IL requirements that drive each configuration.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

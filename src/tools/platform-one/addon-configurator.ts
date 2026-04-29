@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PLATFORM_ONE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const addonConfiguratorTool = {
   name: 'addon_configurator',
@@ -34,23 +35,22 @@ export const addonConfiguratorTool = {
 };
 
 const Schema = z.object({
-  addon: z.string().min(1),
+  addon: z.string().min(1).max(500),
   targetLevel: z.enum(['il2', 'il4', 'il5']),
   clusterSize: z.enum(['small', 'medium', 'large']).default('medium'),
-  existingValues: z.string().optional(),
+  existingValues: z.string().max(20000).optional(),
 });
 
 export async function handleAddonConfigurator(args: unknown): Promise<string> {
-  const { addon, targetLevel, clusterSize, existingValues } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: PLATFORM_ONE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate production-ready Big Bang addon configuration for **${addon}** at **${targetLevel}** on a **${clusterSize}** cluster.
+  return runTool('addon_configurator', args, Schema, async ({ addon, targetLevel, clusterSize, existingValues }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('addon_configurator'),
+      system: PLATFORM_ONE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate production-ready Big Bang addon configuration for **${addon}** at **${targetLevel}** on a **${clusterSize}** cluster.
 ${existingValues ? `\n**Existing Values to Extend:**\n\`\`\`yaml\n${existingValues}\n\`\`\`` : ''}
 
 Provide:
@@ -87,9 +87,10 @@ Provide:
 7. **Common Issues** — top 5 problems people hit deploying ${addon} in Big Bang and their fixes
 
 Use exact Iron Bank image paths and realistic resource values for a ${clusterSize} cluster.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

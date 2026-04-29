@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PIPELINE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const devsecopsScoreCardTool = {
   name: 'devsecops_scorecard',
@@ -32,23 +33,22 @@ export const devsecopsScoreCardTool = {
 };
 
 const Schema = z.object({
-  programName: z.string(),
-  currentCapabilities: z.array(z.string()),
+  programName: z.string().max(500),
+  currentCapabilities: z.array(z.string().max(500)).max(20),
   targetLevel: z.enum(['il2', 'il4', 'il5']),
   softwareFactoryType: z.enum(['platform-one', 'custom', 'iron-bank-consumer']).default('platform-one'),
 });
 
 export async function handleDevsecopsScorecard(args: unknown): Promise<string> {
-  const { programName, currentCapabilities, targetLevel, softwareFactoryType } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 5120,
-    system: PIPELINE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate a DoD DevSecOps maturity scorecard for **${programName}** targeting **${targetLevel}** using a **${softwareFactoryType}** software factory.
+  return runTool('devsecops_scorecard', args, Schema, async ({ programName, currentCapabilities, targetLevel, softwareFactoryType }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('devsecops_scorecard'),
+      system: PIPELINE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate a DoD DevSecOps maturity scorecard for **${programName}** targeting **${targetLevel}** using a **${softwareFactoryType}** software factory.
 
 **Current Capabilities:** ${currentCapabilities.length > 0 ? currentCapabilities.join(', ') : 'None specified'}
 
@@ -89,9 +89,10 @@ Score against the DoD DevSecOps Reference Design v2.0 pillars:
    - Big Bang addons that address specific gaps
 
 7. **Authority to Operate Impact** — how current score affects ATO timeline and what the AO will focus on`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

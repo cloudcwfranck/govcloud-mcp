@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PLATFORM_ONE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const bigbangValidateTool = {
   name: 'bigbang_validate',
@@ -22,22 +23,21 @@ export const bigbangValidateTool = {
 };
 
 const Schema = z.object({
-  valuesYaml: z.string().min(1),
+  valuesYaml: z.string().min(1).max(20000),
   targetLevel: z.enum(['il2', 'il4', 'il5']).default('il4'),
-  bigbangVersion: z.string().optional(),
+  bigbangVersion: z.string().max(500).optional(),
 });
 
 export async function handleBigbangValidate(args: unknown): Promise<string> {
-  const { valuesYaml, targetLevel, bigbangVersion } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 6144,
-    system: PLATFORM_ONE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Validate this Big Bang values.yaml for ${targetLevel} compliance.
+  return runTool('bigbang_validate', args, Schema, async ({ valuesYaml, targetLevel, bigbangVersion }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('bigbang_validate'),
+      system: PLATFORM_ONE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Validate this Big Bang values.yaml for ${targetLevel} compliance.
 ${bigbangVersion ? `Big Bang Version: ${bigbangVersion}` : ''}
 
 \`\`\`yaml
@@ -60,9 +60,10 @@ Provide:
 8. **Line references** from the original values pointing to specific violations
 
 Reference specific Iron Bank image paths (registry1.dso.mil/ironbank/...) for all replacements.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

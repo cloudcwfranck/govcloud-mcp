@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { ARCHITECTURE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const serviceSelectTool = {
   name: 'azure_service_selector',
@@ -30,28 +31,27 @@ export const serviceSelectTool = {
 };
 
 const Schema = z.object({
-  requirement: z.string(),
+  requirement: z.string().max(500),
   impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
-  constraints: z.array(z.string()).default([]),
-  existingServices: z.array(z.string()).default([]),
+  constraints: z.array(z.string().max(500)).max(20).default([]),
+  existingServices: z.array(z.string().max(500)).max(20).default([]),
 });
 
 export async function handleServiceSelect(args: unknown): Promise<string> {
-  const { requirement, impactLevel, constraints, existingServices } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: ARCHITECTURE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Select the right Azure service(s) for this government workload requirement.
+  return runTool('azure_service_selector', args, Schema, async ({ requirement, impactLevel, constraints, existingServices }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('azure_service_selector'),
+      system: ARCHITECTURE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Select the right Azure service(s) for this government workload requirement.
 
 **Requirement:** ${requirement}
 **Impact Level:** ${impactLevel}
-**Constraints:** ${constraints.length > 0 ? constraints.join(', ') : 'None specified'}
-**Existing Services:** ${existingServices.length > 0 ? existingServices.join(', ') : 'None specified'}
+**Constraints:** ${(constraints ?? []).length > 0 ? (constraints ?? []).join(', ') : 'None specified'}
+**Existing Services:** ${(existingServices ?? []).length > 0 ? (existingServices ?? []).join(', ') : 'None specified'}
 
 For each recommendation provide:
 - Service name and exact SKU/tier recommendation
@@ -64,9 +64,10 @@ For each recommendation provide:
 - Integration notes with existing services
 
 If multiple services are viable, rank them and explain the trade-offs.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

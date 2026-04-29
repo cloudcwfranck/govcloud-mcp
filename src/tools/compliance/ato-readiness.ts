@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const atoReadinessTool = {
   name: 'ato_readiness',
@@ -35,11 +36,11 @@ export const atoReadinessTool = {
 };
 
 const Schema = z.object({
-  systemDescription: z.string(),
-  azureServices: z.array(z.string()),
+  systemDescription: z.string().max(2000),
+  azureServices: z.array(z.string().max(500)).max(50),
   targetAuthorization: z.enum(['fedramp-moderate', 'fedramp-high', 'dod-il4', 'dod-il5', 'dod-il6']),
   currentMaturity: z.enum(['initial', 'developing', 'defined', 'managed']),
-  existingDocumentation: z.array(z.string()).default([]),
+  existingDocumentation: z.array(z.string().max(500)).default([]),
 });
 
 const ATO_SYSTEM = `${BASE_SYSTEM_PROMPT}
@@ -58,30 +59,29 @@ Your assessment must include:
 The last item is where your expertise shows. Document what actually fails assessments.`;
 
 export async function handleAtoReadiness(args: unknown): Promise<string> {
-  const { systemDescription, azureServices, targetAuthorization, currentMaturity, existingDocumentation } =
-    Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: ATO_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Assess ATO readiness for this system:
+  return runTool('ato_readiness', args, Schema, async ({ systemDescription, azureServices, targetAuthorization, currentMaturity, existingDocumentation }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('ato_readiness'),
+      system: ATO_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Assess ATO readiness for this system:
 
 **Target Authorization:** ${targetAuthorization}
 **Current Maturity:** ${currentMaturity}
 **Azure Services:** ${azureServices.join(', ')}
-**Existing Documentation:** ${existingDocumentation.length > 0 ? existingDocumentation.join(', ') : 'None'}
+**Existing Documentation:** ${(existingDocumentation ?? []).length > 0 ? (existingDocumentation ?? []).join(', ') : 'None'}
 
 **System Description:**
 ${systemDescription}
 
 Provide the complete readiness assessment including the brutally honest AO kickoff risks.`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }

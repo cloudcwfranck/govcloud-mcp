@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { anthropic, MODEL } from '../../client.js';
 import { PLATFORM_ONE_SYSTEM } from '../../prompts/system-prompts.js';
+import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
 
 export const ironbankLookupTool = {
   name: 'ironbank_lookup',
@@ -23,21 +24,20 @@ export const ironbankLookupTool = {
 };
 
 const Schema = z.object({
-  imageName: z.string().min(1),
-  version: z.string().optional(),
+  imageName: z.string().min(1).max(500),
+  version: z.string().max(500).optional(),
 });
 
 export async function handleIronbankLookup(args: unknown): Promise<string> {
-  const { imageName, version } = Schema.parse(args);
-
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    system: PLATFORM_ONE_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: `Look up the Iron Bank hardened container image for: **${imageName}**${version ? ` version ${version}` : ' (latest approved version)'}
+  return runTool('ironbank_lookup', args, Schema, async ({ imageName, version }) => {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: getTokenBudget('ironbank_lookup'),
+      system: PLATFORM_ONE_SYSTEM,
+      messages: [
+        {
+          role: 'user',
+          content: `Look up the Iron Bank hardened container image for: **${imageName}**${version ? ` version ${version}` : ' (latest approved version)'}
 
 Provide:
 1. **Iron Bank Registry Path** — full registry1.dso.mil path (e.g., registry1.dso.mil/ironbank/opensource/nginx/nginx:1.25.3)
@@ -60,9 +60,10 @@ Provide:
 12. **Big Bang Values Reference** — where this image appears in Big Bang values.yaml (if applicable)
 
 Use accurate Iron Bank registry paths under registry1.dso.mil/ironbank/. Common namespaces: ironbank/opensource/, ironbank/redhat/, ironbank/google/, ironbank/elastic/, ironbank/hashicorp/`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  return response.content[0].type === 'text' ? response.content[0].text : '';
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  });
 }
