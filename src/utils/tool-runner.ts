@@ -12,6 +12,7 @@ export const TOKEN_BUDGETS: Record<string, number> = {
   bigbang_harden: 8192,
   bicep_remediate: 8192,
   landing_zone_design: 6144,
+  landing_zone_reference: 8192,
   pipeline_audit: 6144,
   ato_readiness: 4096,
   control_lookup: 4096,
@@ -52,6 +53,7 @@ export const TOOL_TIMEOUTS: Record<string, number> = {
   bigbang_harden: 60000,
   bicep_remediate: 60000,
   landing_zone_design: 60000,
+  landing_zone_reference: 90000, // extra time for ESLZ fetch + generation
 };
 
 function getTimeout(tool: string): number {

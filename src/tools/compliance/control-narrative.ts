@@ -2,6 +2,12 @@ import { z } from 'zod';
 import { anthropic, MODEL, BASE_SYSTEM_PROMPT } from '../../client.js';
 import { controlNarrativeTemplate } from '../../prompts/templates.js';
 import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
+import {
+  fetchEslzContent,
+  extractRelevantPolicies,
+  extractRelevantArchGuidance,
+  ESLZ_ATTRIBUTION,
+} from '../../utils/github-fetcher.js';
 
 export const controlNarrativeTool = {
   name: 'control_narrative',
@@ -64,7 +70,36 @@ Requirements:
 
 export async function handleControlNarrative(args: unknown): Promise<string> {
   return runTool('control_narrative', args, Schema, async ({ controlId, systemName, systemDescription, azureServices, cspLevel, impactLevel, organizationName }) => {
-    const prompt = controlNarrativeTemplate(
+    const controlFamily = controlId.split('-')[0];
+
+    // Fetch ESLZ grounding context in parallel — graceful degradation on failure
+    const [policyDefs, archDoc] = await Promise.all([
+      fetchEslzContent('eslzArm/managementGroupTemplates/policyDefinitions/policies.json'),
+      fetchEslzContent('README.md'),
+    ]);
+
+    const eslzAvailable = !!(policyDefs || archDoc);
+
+    let groundingContext = '';
+    if (eslzAvailable) {
+      const relevantPolicies = extractRelevantPolicies(policyDefs, controlFamily, azureServices);
+      const archGuidance = extractRelevantArchGuidance(archDoc, controlFamily);
+
+      const sections: string[] = [];
+      if (relevantPolicies) {
+        sections.push(`## Azure Enterprise Scale Policy Definitions (Official Microsoft Source)
+The following are real Azure Policy definitions from the official Azure/Enterprise-Scale repository relevant to ${controlId}:
+
+${relevantPolicies}`);
+      }
+      if (archGuidance) {
+        sections.push(`## Azure Landing Zone Design Guidance (Official Microsoft Source)
+${archGuidance}`);
+      }
+      groundingContext = sections.join('\n\n');
+    }
+
+    const basePrompt = controlNarrativeTemplate(
       controlId,
       systemName,
       systemDescription,
@@ -74,13 +109,18 @@ export async function handleControlNarrative(args: unknown): Promise<string> {
       organizationName
     );
 
+    const fullPrompt = groundingContext
+      ? `${basePrompt}\n\n## Grounding Context — Official Microsoft Azure/Enterprise-Scale Repository\nUse the following official Microsoft content to ensure your narrative references real Azure Policy definition names and accurate ALZ architecture patterns:\n\n${groundingContext}`
+      : basePrompt;
+
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: getTokenBudget('control_narrative'),
       system: NARRATIVE_SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: fullPrompt }],
     });
 
-    return response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    return eslzAvailable ? text + ESLZ_ATTRIBUTION : text;
   });
 }

@@ -1,10 +1,20 @@
 # @cloudcraftwithfranck/govcloud-mcp
 
-An MCP (Model Context Protocol) server providing 20 AI-powered tools for DoD/FedRAMP cloud engineering. Built for Claude Desktop, Cursor, VS Code, and any MCP-compatible AI client.
+An MCP (Model Context Protocol) server providing 22 AI-powered tools for DoD/FedRAMP cloud engineering. Built for Claude Desktop, Cursor, VS Code, and any MCP-compatible AI client.
 
 ## What It Does
 
 Stop googling NIST controls and Iron Bank image paths. This server puts government cloud engineering knowledge directly into your AI assistant — compliance analysis, architecture design, Platform One Big Bang configuration, DevSecOps pipelines, and ATO documentation.
+
+## Grounded in Official Microsoft Sources
+
+Unlike generic AI tools, this MCP server fetches content directly from Microsoft's official repositories at runtime:
+
+- **Azure/Enterprise-Scale** — The canonical ALZ reference implementation maintained by Microsoft's Azure engineering team. Policy definitions, architecture patterns, and landing zone templates are fetched live and injected as grounding context into every relevant tool call.
+- **Policy Definitions** — Real Azure Policy definition names and IDs from the official Enterprise Scale repository, not from training data. Always current.
+- **Architecture Patterns** — CAF-aligned design principles from the source of truth. Management Group hierarchies, subscription topologies, and hub-spoke network designs reference the same patterns Azure engineers use internally.
+
+When you ask for a landing zone design or control narrative, the response is grounded in the same repository that powers the Azure Landing Zone Accelerator — not in static training data. Responses include an attribution footer linking to the source.
 
 ## Quick Start
 
