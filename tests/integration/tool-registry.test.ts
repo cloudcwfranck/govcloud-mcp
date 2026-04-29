@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { allTools, handleToolCall } from '../../src/tools/index.js';
 
 describe('tool registry integrity', () => {
-  it('loads 21 tools (20 domain tools + quickstart)', () => {
-    expect(allTools.length).toBe(21);
+  it('loads 22 tools (21 domain tools + quickstart)', () => {
+    expect(allTools.length).toBe(22);
   });
 
   it('has no duplicate tool names', () => {

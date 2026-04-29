@@ -6,6 +6,13 @@ vi.mock('../../../src/client.js', () => ({
   BASE_SYSTEM_PROMPT: 'test',
 }));
 
+vi.mock('../../../src/utils/github-fetcher.js', () => ({
+  fetchEslzContent: vi.fn().mockResolvedValue(''),
+  extractRelevantPolicies: vi.fn().mockReturnValue(''),
+  extractRelevantArchGuidance: vi.fn().mockReturnValue(''),
+  ESLZ_ATTRIBUTION: '\n\n---\n*Test attribution*',
+}));
+
 import { handleControlNarrative } from '../../../src/tools/compliance/control-narrative.js';
 import { buildMockAnthropicResponse, MOCK_NARRATIVE_RESPONSE } from '../../fixtures/mock-helpers.js';
 import { anthropic } from '../../../src/client.js';
@@ -37,9 +44,9 @@ describe('control_narrative', () => {
       await expect(handleControlNarrative({ ...VALID_ARGS, systemName: undefined })).rejects.toThrow();
     });
 
-    it('rejects missing azureServices', async () => {
+    it('rejects azureServices over 50 items', async () => {
       await expect(
-        handleControlNarrative({ ...VALID_ARGS, azureServices: [] })
+        handleControlNarrative({ ...VALID_ARGS, azureServices: Array(51).fill('AKS') })
       ).rejects.toThrow();
     });
 

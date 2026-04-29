@@ -18,6 +18,16 @@ vi.mock('../../src/client.js', () => ({
   callSiteApi: vi.fn().mockRejectedValue(new Error('Site API not available in tests')),
 }));
 
+// Mock ESLZ fetcher so tests don't hit GitHub
+vi.mock('../../src/utils/github-fetcher.js', () => ({
+  fetchEslzContent: vi.fn().mockResolvedValue(''),
+  fetchEslzJson: vi.fn().mockResolvedValue(null),
+  fetchEslzBatch: vi.fn().mockResolvedValue(new Map()),
+  extractRelevantPolicies: vi.fn().mockReturnValue(''),
+  extractRelevantArchGuidance: vi.fn().mockReturnValue(''),
+  ESLZ_ATTRIBUTION: '\n\n---\n*Test attribution*',
+}));
+
 describe('MCP server — tool call routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,6 +62,7 @@ describe('MCP server — tool call routing', () => {
       ato_readiness: { systemDescription: 'Mission critical system on AKS', azureServices: ['AKS'], targetAuthorization: 'fedramp-high', currentMaturity: 'initial' },
       oscal_fragment: { resourceDescription: 'Azure Key Vault for secrets management', controlIds: ['AC-2'], impactLevel: 'il4' },
       landing_zone_design: { missionType: 'legal-services', dataClassification: 'cui', userBase: 'conus', targetImpactLevel: 'il4', cssp: 'azure-gcc-high' },
+      landing_zone_reference: { scenario: 'mission-landing-zone', impactLevel: 'il4', csp: 'azure-gcc-high', missionType: 'Navy legal case management', subscriptionCount: '4-10' },
       azure_service_selector: { requirement: 'managed kubernetes', impactLevel: 'il4' },
       gcc_high_guidance: { service: 'AKS' },
       private_endpoint_map: { services: ['Key Vault'], impactLevel: 'il4' },

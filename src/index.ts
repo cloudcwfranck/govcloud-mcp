@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -12,6 +13,31 @@ import { join } from 'path';
 import { allTools, handleToolCall } from './tools/index.js';
 import { logger } from './utils/logger.js';
 import { formatErrorForMCP } from './utils/errors.js';
+import { fetchEslzContent } from './utils/github-fetcher.js';
+
+const ESLZ_RESOURCES = [
+  {
+    uri: 'govcloud://eslz/architecture',
+    name: 'Azure Landing Zones Architecture Overview (Official)',
+    description: 'Official Azure Landing Zones (Enterprise-Scale) README from github.com/Azure/Enterprise-Scale',
+    mimeType: 'text/markdown',
+    eslzPath: 'README.md',
+  },
+  {
+    uri: 'govcloud://eslz/policy-definitions',
+    name: 'ALZ Policy Definitions — 161 Custom Policies (Official)',
+    description: 'All 161 custom Azure Policy definitions from the Enterprise Scale reference implementation',
+    mimeType: 'application/json',
+    eslzPath: 'eslzArm/managementGroupTemplates/policyDefinitions/policies.json',
+  },
+  {
+    uri: 'govcloud://eslz/policy-initiatives',
+    name: 'ALZ Policy Initiatives — 52 Initiative Definitions (Official)',
+    description: 'All 52 policy initiative (set) definitions from the Enterprise Scale reference implementation',
+    mimeType: 'application/json',
+    eslzPath: 'eslzArm/managementGroupTemplates/policyDefinitions/initiatives.json',
+  },
+];
 
 const RESOURCES = [
   {
@@ -120,14 +146,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
-    resources: RESOURCES.map(({ uri, name, description, mimeType }) => ({
-      uri, name, description, mimeType,
-    })),
+    resources: [
+      ...RESOURCES.map(({ uri, name, description, mimeType }) => ({ uri, name, description, mimeType })),
+      ...ESLZ_RESOURCES.map(({ uri, name, description, mimeType }) => ({ uri, name, description, mimeType })),
+    ],
   };
 });
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
+
+  // Check ESLZ live resources first
+  const eslzResource = ESLZ_RESOURCES.find((r) => r.uri === uri);
+  if (eslzResource) {
+    const content = await fetchEslzContent(eslzResource.eslzPath);
+    return {
+      contents: [{
+        uri,
+        mimeType: eslzResource.mimeType,
+        text: content || `(Content temporarily unavailable — fetch failed for ${eslzResource.eslzPath})`,
+      }],
+    };
+  }
+
   const resource = RESOURCES.find((r) => r.uri === uri);
   if (!resource) throw new Error(`Resource not found: ${uri}`);
 

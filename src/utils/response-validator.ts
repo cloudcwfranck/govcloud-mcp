@@ -9,6 +9,7 @@ const MIN_LENGTHS: Record<string, number> = {
   control_lookup: 400,
   control_narrative: 600,
   landing_zone_design: 800,
+  landing_zone_reference: 1000,
   ssp_section: 500,
   contingency_plan: 600,
   bicep_analyze: 300,

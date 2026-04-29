@@ -6,16 +6,17 @@ import { formatErrorForMCP, TimeoutError } from './errors.js';
 
 // Per-tool token budgets
 export const TOKEN_BUDGETS: Record<string, number> = {
-  control_narrative: 8192,
-  ssp_section: 8192,
+  control_narrative: 4096,
+  ssp_section: 2048,
   contingency_plan: 8192,
   bigbang_harden: 8192,
   bicep_remediate: 8192,
   landing_zone_design: 6144,
+  landing_zone_reference: 4096,
   pipeline_audit: 6144,
   ato_readiness: 4096,
   control_lookup: 4096,
-  poam_generate: 4096,
+  poam_generate: 2048,
   oscal_fragment: 4096,
   addon_configurator: 4096,
   private_endpoint_map: 4096,
@@ -33,7 +34,7 @@ export const TOKEN_BUDGETS: Record<string, number> = {
 export const TOOL_TIMEOUTS: Record<string, number> = {
   ironbank_lookup: 15000,
   azure_service_selector: 15000,
-  govcloud_quickstart: 15000,
+  govcloud_quickstart: 5000,
   gcc_high_guidance: 20000,
   signing_config: 20000,
   control_lookup: 30000,
@@ -42,16 +43,17 @@ export const TOOL_TIMEOUTS: Record<string, number> = {
   pipeline_audit: 30000,
   devsecops_scorecard: 30000,
   ato_readiness: 30000,
-  poam_generate: 30000,
+  poam_generate: 25000,
   private_endpoint_map: 30000,
   addon_configurator: 45000,
   oscal_fragment: 45000,
   control_narrative: 60000,
-  ssp_section: 60000,
+  ssp_section: 25000,
   contingency_plan: 60000,
   bigbang_harden: 60000,
   bicep_remediate: 60000,
   landing_zone_design: 60000,
+  landing_zone_reference: 90000, // extra time for ESLZ fetch + generation
 };
 
 function getTimeout(tool: string): number {

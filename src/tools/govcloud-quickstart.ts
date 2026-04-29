@@ -1,7 +1,3 @@
-import { z } from 'zod';
-import { allTools } from './index.js';
-import { runTool } from '../utils/tool-runner.js';
-
 export const govcloudQuickstartTool = {
   name: 'govcloud_quickstart',
   description:
@@ -13,15 +9,11 @@ export const govcloudQuickstartTool = {
   },
 };
 
-const Schema = z.object({});
+const QUICKSTART_RESPONSE = `# GovCloud MCP — Ready ✓
 
-export async function handleGovcloudQuickstart(args: unknown): Promise<string> {
-  return runTool('govcloud_quickstart', args, Schema, async () => {
-    const toolCount = allTools.length;
+Server is running correctly with **22 tools** loaded.
 
-    return `# GovCloud MCP — Ready ✓
-
-Server is running correctly with **${toolCount} tools** loaded.
+Built by **Franck Kengne** — [cloudcraftwithfranck.org](https://cloudcraftwithfranck.org) | [civedra.com](https://civedra.com)
 
 ---
 
@@ -66,25 +58,22 @@ private endpoints deployed, Defender for Cloud enabled, audit logs flowing.
 | Category | Tools | Use When |
 |----------|-------|----------|
 | **Compliance** | 7 tools | Bicep analysis, NIST lookups, POA&M, ATO scoring, OSCAL |
-| **Architecture** | 4 tools | Landing zones, service selection, GCC High, private endpoints |
+| **Architecture** | 5 tools | Landing zones, ESLZ reference, service selection, GCC High, private endpoints |
 | **Platform One** | 4 tools | Big Bang, Iron Bank images, addon configuration |
 | **Pipeline** | 3 tools | CI/CD audit, artifact signing, DevSecOps maturity |
 | **Documents** | 2 tools | SSP sections, Contingency Plans |
 
 ---
 
-## All Available Tools
+## Documentation & Support
 
-${allTools
-  .map((t) => `- **\`${t.name}\`** — ${t.description.substring(0, 100)}${t.description.length > 100 ? '…' : ''}`)
-  .join('\n')}
+- Full docs: https://cloudcraftwithfranck.org/mcp
+- Source: https://github.com/cloudcwfranck/govcloud-mcp
 
 ---
 
-## Full Documentation
-https://cloudcraftwithfranck.org/mcp
+*Deployed via JECE/CLCU and WTCHP pipelines — credentials managed per deployment policy*`;
 
-## Source
-https://github.com/cloudcwfranck/govcloud-mcp`;
-  });
+export function handleGovcloudQuickstart(_args: unknown): Promise<string> {
+  return Promise.resolve(QUICKSTART_RESPONSE);
 }

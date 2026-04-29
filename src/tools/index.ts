@@ -7,6 +7,7 @@ import { atoReadinessTool, handleAtoReadiness } from './compliance/ato-readiness
 import { oscalFragmentTool, handleOscalFragment } from './compliance/oscal-fragment.js';
 
 import { landingZoneTool, handleLandingZone } from './architecture/landing-zone-design.js';
+import { landingZoneReferenceTool, handleLandingZoneReference } from './architecture/landing-zone-reference.js';
 import { serviceSelectTool, handleServiceSelect } from './architecture/azure-service-selector.js';
 import { gccHighTool, handleGccHigh } from './architecture/gcc-high-guidance.js';
 import { privateEndpointTool, handlePrivateEndpoint } from './architecture/private-endpoint-map.js';
@@ -36,6 +37,7 @@ export const allTools = [
   oscalFragmentTool,
   // Architecture
   landingZoneTool,
+  landingZoneReferenceTool,
   serviceSelectTool,
   gccHighTool,
   privateEndpointTool,
@@ -65,6 +67,7 @@ export async function handleToolCall(name: string, args: unknown): Promise<strin
     case 'ato_readiness':         return handleAtoReadiness(args);
     case 'oscal_fragment':        return handleOscalFragment(args);
     case 'landing_zone_design':   return handleLandingZone(args);
+    case 'landing_zone_reference': return handleLandingZoneReference(args);
     case 'azure_service_selector': return handleServiceSelect(args);
     case 'gcc_high_guidance':     return handleGccHigh(args);
     case 'private_endpoint_map':  return handlePrivateEndpoint(args);
