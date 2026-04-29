@@ -1,0 +1,241 @@
+{
+  "metadata": {
+    "title": "Azure Service to NIST 800-53 Rev 5 Compliance Mapping",
+    "version": "2024-01",
+    "description": "Maps Azure services to NIST controls, FedRAMP authorization status, and IL availability"
+  },
+  "services": {
+    "Azure Kubernetes Service (AKS)": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": false,
+      "primary_controls": ["AC-4","CM-7","SC-7","SI-3","SI-4","RA-5"],
+      "required_configs": {
+        "il4": [
+          "Enable Microsoft Defender for Containers",
+          "Use Azure CNI networking (not kubenet)",
+          "Enable OIDC issuer and Workload Identity",
+          "Restrict API server to authorized IPs",
+          "Enable audit logging to Log Analytics",
+          "Use private cluster (no public endpoint)",
+          "Enable Azure Policy add-on for Kubernetes",
+          "Node OS auto-upgrade channel: NodeImage or SecurityPatch",
+          "Use FIPS-enabled node pools for IL5"
+        ],
+        "fedramp_high": [
+          "Enable Microsoft Defender for Containers",
+          "Private cluster recommended",
+          "Enable audit logging",
+          "Azure Policy add-on required"
+        ]
+      },
+      "private_endpoint": { "required_il4": true, "dns_zone": "N/A - uses private cluster API server" }
+    },
+    "Azure Key Vault": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["IA-5","SC-12","SC-28","SC-28(1)"],
+      "required_configs": {
+        "il4": [
+          "HSM-backed keys (Premium tier)",
+          "Soft delete enabled with 90-day retention",
+          "Purge protection enabled",
+          "Private endpoint required",
+          "Disable public network access",
+          "RBAC authorization model (not access policies)",
+          "Diagnostic logging to Log Analytics",
+          "Customer-managed key (CMK) for at-rest encryption"
+        ]
+      },
+      "private_endpoint": { "required_il4": true, "dns_zone": "privatelink.vaultcore.usgovcloudapi.net" }
+    },
+    "Azure Storage Account": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["SC-28","SC-28(1)","AC-3","AU-9"],
+      "required_configs": {
+        "il4": [
+          "TLS 1.2 minimum",
+          "Disable blob public access",
+          "Enable infrastructure encryption (double encryption)",
+          "Customer-managed keys with Key Vault",
+          "Private endpoints for Blob, Table, Queue, File, DFS",
+          "Disable Shared Key authentication (use Entra ID RBAC)",
+          "Geo-redundant storage (GRS) for data resilience",
+          "Enable Storage Advanced Threat Protection",
+          "Immutable blob storage for audit logs"
+        ]
+      },
+      "private_endpoint": {
+        "required_il4": true,
+        "dns_zones": {
+          "blob": "privatelink.blob.core.usgovcloudapi.net",
+          "file": "privatelink.file.core.usgovcloudapi.net",
+          "queue": "privatelink.queue.core.usgovcloudapi.net",
+          "table": "privatelink.table.core.usgovcloudapi.net",
+          "dfs": "privatelink.dfs.core.usgovcloudapi.net"
+        }
+      }
+    },
+    "Azure SQL Database": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": false,
+      "primary_controls": ["SC-28","AC-3","AU-2","AU-12","SI-4"],
+      "required_configs": {
+        "il4": [
+          "Private endpoint required",
+          "Deny public endpoint access",
+          "Transparent Data Encryption with CMK",
+          "Advanced Threat Protection enabled",
+          "Vulnerability Assessment enabled",
+          "Azure AD authentication only (disable SQL auth)",
+          "Auditing to Storage Account or Log Analytics",
+          "Ledger for tamper-evident audit trails"
+        ]
+      },
+      "private_endpoint": { "required_il4": true, "dns_zone": "privatelink.database.usgovcloudapi.net" }
+    },
+    "Azure App Service": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": false,
+      "primary_controls": ["SC-8","CM-7","AC-4"],
+      "required_configs": {
+        "il4": [
+          "VNet integration required",
+          "Private endpoint for inbound traffic",
+          "TLS 1.2 minimum, disable older protocols",
+          "Disable FTP/FTPS",
+          "Enable Managed Identity",
+          "Disable public access (access restriction rules)",
+          "App Service Environment (ASE) for IL5",
+          "Enable Defender for App Service",
+          "Client certificates for mutual TLS"
+        ]
+      },
+      "private_endpoint": { "required_il4": true, "dns_zone": "privatelink.azurewebsites.us" }
+    },
+    "Azure Container Registry (ACR)": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": false,
+      "primary_controls": ["CM-7","CM-14","SI-3"],
+      "required_configs": {
+        "il4": [
+          "Premium SKU required",
+          "Private endpoint required",
+          "Disable public registry access",
+          "Content trust / image signing",
+          "Defender for Container Registries",
+          "Geo-replication for resilience",
+          "Customer-managed keys",
+          "Audit logging enabled"
+        ]
+      },
+      "private_endpoint": { "required_il4": true, "dns_zone": "privatelink.azurecr.us" }
+    },
+    "Azure Monitor / Log Analytics": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["AU-2","AU-3","AU-6","AU-9","AU-12","SI-4"],
+      "required_configs": {
+        "il4": [
+          "Dedicated cluster for IL5 isolation",
+          "Customer-managed keys for workspace encryption",
+          "Private Link for Log Analytics data ingestion",
+          "90-day minimum retention (1 year recommended)",
+          "Immutable log storage",
+          "Role-based access to workspace data",
+          "Enable Sentinel for SIEM",
+          "Table-level RBAC for sensitive log types"
+        ]
+      },
+      "private_endpoint": {
+        "required_il4": false,
+        "recommended": true,
+        "dns_zone": "privatelink.oms.opinsights.azure.us"
+      }
+    },
+    "Azure Active Directory / Entra ID": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["IA-2","IA-2(1)","IA-2(2)","IA-2(12)","IA-5","AC-2","AC-6"],
+      "required_configs": {
+        "il4": [
+          "CAC/PIV certificate-based authentication (CBA)",
+          "Conditional Access policies enforced",
+          "MFA required for all users",
+          "Privileged Identity Management (PIM) for admin roles",
+          "Identity Protection enabled",
+          "Break-glass accounts with alerting",
+          "Named locations for network restriction",
+          "Sign-in risk policies",
+          "Disable legacy authentication protocols"
+        ]
+      },
+      "private_endpoint": { "required_il4": false, "note": "Entra ID is a SaaS service, no private endpoint available" }
+    },
+    "Azure Virtual Network (VNet)": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["SC-7","SC-5","AC-4","CM-7"],
+      "required_configs": {
+        "il4": [
+          "DDoS Protection Standard enabled",
+          "Network Security Groups on all subnets",
+          "NSG flow logs to Storage + Traffic Analytics",
+          "Azure Firewall Premium for egress control",
+          "Force tunnel all internet traffic through NVA/firewall",
+          "Private DNS zones for all private endpoints",
+          "No public IP addresses on workload VMs",
+          "VNet peering requires justification and NSG controls",
+          "Azure Bastion for administrative access (no jump boxes with public IPs)"
+        ]
+      }
+    },
+    "Azure Defender for Cloud": {
+      "fedramp_authorized": true,
+      "gcc_high_available": true,
+      "il4_approved": true,
+      "il5_approved": true,
+      "primary_controls": ["RA-5","SI-4","CA-7","CA-8","AU-6"],
+      "required_configs": {
+        "il4": [
+          "Defender CSPM (Cloud Security Posture Management) enabled",
+          "All Defender plans enabled for in-scope services",
+          "Azure Security Benchmark policy initiative assigned",
+          "Regulatory Compliance dashboard: NIST 800-53 R5 + FedRAMP H",
+          "Export findings to SIEM/Log Analytics",
+          "Auto-provisioning of Log Analytics agent",
+          "Workflow automation for critical findings",
+          "Continuous export to Event Hub for SIEM integration"
+        ]
+      }
+    }
+  },
+  "control_to_service_map": {
+    "IA-2(12)": ["Azure Active Directory - CAC/PIV CBA"],
+    "SC-28(1)": ["Azure Storage - CMK", "Azure SQL - TDE CMK", "Azure Key Vault - HSM"],
+    "SC-7": ["Azure Firewall Premium", "Azure Virtual Network NSG", "Azure Private Link"],
+    "AU-2": ["Azure Monitor", "Log Analytics", "Microsoft Sentinel"],
+    "RA-5": ["Microsoft Defender for Cloud", "Defender for Containers", "Azure Policy"],
+    "CM-7": ["Azure Policy", "Kubernetes Gatekeeper via AKS", "Azure App Configuration"],
+    "AC-2": ["Microsoft Entra ID", "Privileged Identity Management"],
+    "CM-14": ["Azure Container Registry - Content Trust", "AKS - Defender for Containers"]
+  }
+}

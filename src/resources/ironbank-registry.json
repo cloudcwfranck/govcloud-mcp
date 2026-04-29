@@ -1,0 +1,230 @@
+{
+  "metadata": {
+    "title": "Platform One Iron Bank Image Registry",
+    "registry": "registry1.dso.mil",
+    "description": "Catalog of DoD-hardened container images from Platform One Iron Bank",
+    "note": "Image digests are examples — always pull current digests from registry1.dso.mil"
+  },
+  "categories": {
+    "web-servers": [
+      {
+        "name": "nginx",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/nginx/nginx",
+        "latest_version": "1.25.3",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 5 }
+      },
+      {
+        "name": "apache-httpd",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/httpd/httpd",
+        "latest_version": "2.4.58",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 3 }
+      }
+    ],
+    "databases": [
+      {
+        "name": "postgresql",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/postgres/postgresql",
+        "latest_version": "15.5",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 3, "low": 7 }
+      },
+      {
+        "name": "redis",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/redis/redis",
+        "latest_version": "7.2.3",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 2 }
+      },
+      {
+        "name": "mysql",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/mysql/mysql",
+        "latest_version": "8.0.35",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 4 }
+      },
+      {
+        "name": "elasticsearch",
+        "ib_path": "registry1.dso.mil/ironbank/elastic/elasticsearch/elasticsearch",
+        "latest_version": "8.11.1",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 1, "medium": 4, "low": 9 }
+      }
+    ],
+    "runtimes": [
+      {
+        "name": "openjdk-17",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/openjdk/openjdk17",
+        "latest_version": "17.0.9",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 6 }
+      },
+      {
+        "name": "python-3.11",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/python/python311",
+        "latest_version": "3.11.7",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 4 }
+      },
+      {
+        "name": "nodejs-18",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/nodejs/nodejs18",
+        "latest_version": "18.19.0",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 5 }
+      },
+      {
+        "name": "golang-1.21",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/golang/golang",
+        "latest_version": "1.21.5",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 3 }
+      }
+    ],
+    "big-bang-core": [
+      {
+        "name": "istio-pilot",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/istio/pilot",
+        "latest_version": "1.19.4",
+        "base_os": "scratch",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 0, "low": 1 }
+      },
+      {
+        "name": "istio-proxyv2",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/istio/proxyv2",
+        "latest_version": "1.19.4",
+        "base_os": "scratch",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 0, "low": 1 }
+      },
+      {
+        "name": "kyverno",
+        "ib_path": "registry1.dso.mil/ironbank/nirmata/kyverno",
+        "latest_version": "1.11.3",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 2 }
+      },
+      {
+        "name": "prometheus",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/prometheus/prometheus",
+        "latest_version": "2.48.0",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 4 }
+      },
+      {
+        "name": "grafana",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/grafana/grafana",
+        "latest_version": "10.2.3",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 3, "low": 8 }
+      },
+      {
+        "name": "keycloak",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/keycloak/keycloak",
+        "latest_version": "23.0.2",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 1, "medium": 4, "low": 10 }
+      },
+      {
+        "name": "vault",
+        "ib_path": "registry1.dso.mil/ironbank/hashicorp/vault/vault",
+        "latest_version": "1.15.4",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 3 }
+      },
+      {
+        "name": "gitlab",
+        "ib_path": "registry1.dso.mil/ironbank/gitlab/gitlab/gitlab-ee",
+        "latest_version": "16.7.1",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 2, "medium": 8, "low": 15 }
+      },
+      {
+        "name": "fluent-bit",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/fluent/fluent-bit",
+        "latest_version": "2.2.0",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 2 }
+      },
+      {
+        "name": "loki",
+        "ib_path": "registry1.dso.mil/ironbank/opensource/grafana/loki",
+        "latest_version": "2.9.3",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 4 }
+      }
+    ],
+    "security-tools": [
+      {
+        "name": "twistlock-defender",
+        "ib_path": "registry1.dso.mil/ironbank/twistlock/defender/defender",
+        "latest_version": "32.05.124",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 1, "low": 2 }
+      },
+      {
+        "name": "anchore-enterprise",
+        "ib_path": "registry1.dso.mil/ironbank/anchore/enterprise/enterprise",
+        "latest_version": "5.3.0",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 2, "low": 5 }
+      },
+      {
+        "name": "sonarqube",
+        "ib_path": "registry1.dso.mil/ironbank/sonarsource/sonarqube/sonarqube",
+        "latest_version": "10.3.0",
+        "base_os": "UBI 8",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 1, "medium": 3, "low": 7 }
+      }
+    ],
+    "base-images": [
+      {
+        "name": "ubi8-minimal",
+        "ib_path": "registry1.dso.mil/ironbank/redhat/ubi/ubi8-minimal",
+        "latest_version": "8.9",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 0, "low": 1 }
+      },
+      {
+        "name": "ubi9-minimal",
+        "ib_path": "registry1.dso.mil/ironbank/redhat/ubi/ubi9-minimal",
+        "latest_version": "9.3",
+        "approval_status": "Approved",
+        "cve_status": { "critical": 0, "high": 0, "medium": 0, "low": 0 }
+      }
+    ]
+  },
+  "pull_secret": {
+    "registry": "registry1.dso.mil",
+    "create_command": "kubectl create secret docker-registry registry1-creds --docker-server=registry1.dso.mil --docker-username=<USERNAME> --docker-password=<CLI_SECRET> -n <namespace>",
+    "account_url": "https://login.dso.mil",
+    "note": "Requires Platform One account with registry1 access. CLI Secret (not password) used for docker pull."
+  },
+  "cosign_verification": {
+    "public_key_url": "https://ironbank.dso.mil/repomap/cosign.pub",
+    "verify_command": "cosign verify --key https://ironbank.dso.mil/repomap/cosign.pub <image>:<tag>"
+  }
+}

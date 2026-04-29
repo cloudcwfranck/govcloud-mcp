@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "title": "NIST SP 800-53 Rev 5 Security Control Catalog (Abbreviated)",
+    "version": "Rev 5",
+    "date": "2020-09",
+    "source": "https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final",
+    "note": "Abbreviated catalog with key controls. Full catalog available at csrc.nist.gov"
+  },
+  "families": {
+    "AC": {
+      "name": "Access Control",
+      "controls": {
+        "AC-1": { "title": "Policy and Procedures", "description": "Develop, document, and disseminate access control policy and procedures." },
+        "AC-2": { "title": "Account Management", "description": "Manage information system accounts, including establishing, activating, modifying, reviewing, disabling, and removing accounts." },
+        "AC-2(1)": { "title": "Account Management | Automated System Account Management", "description": "Support the management of system accounts using automated mechanisms." },
+        "AC-2(12)": { "title": "Account Management | Account Monitoring for Atypical Usage", "description": "Monitor and report atypical usage of information system accounts." },
+        "AC-3": { "title": "Access Enforcement", "description": "Enforce approved authorizations for logical access to the system." },
+        "AC-4": { "title": "Information Flow Enforcement", "description": "Enforce approved authorizations for controlling the flow of information." },
+        "AC-5": { "title": "Separation of Duties", "description": "Separate duties of individuals to reduce the risk of malevolent activity." },
+        "AC-6": { "title": "Least Privilege", "description": "Employ the principle of least privilege, allowing only authorized accesses." },
+        "AC-6(1)": { "title": "Least Privilege | Authorize Access to Security Functions", "description": "Authorize access to security functions and security-relevant information only to designated personnel." },
+        "AC-6(5)": { "title": "Least Privilege | Privileged Accounts", "description": "Restrict privileged accounts to designated personnel or roles." },
+        "AC-17": { "title": "Remote Access", "description": "Establish and document usage restrictions, configuration/connection requirements, and implement policies for remote access." },
+        "AC-17(2)": { "title": "Remote Access | Protection of Confidentiality and Integrity Using Encryption", "description": "Implement cryptographic mechanisms to protect the confidentiality and integrity of remote access sessions." }
+      }
+    },
+    "AU": {
+      "name": "Audit and Accountability",
+      "controls": {
+        "AU-1": { "title": "Policy and Procedures", "description": "Develop, document, and disseminate audit and accountability policy and procedures." },
+        "AU-2": { "title": "Event Logging", "description": "Identify the types of events that the system is capable of logging and coordinate with other organizations." },
+        "AU-3": { "title": "Content of Audit Records", "description": "Ensure audit records contain sufficient information to establish what occurred, when, where, and by whom." },
+        "AU-6": { "title": "Audit Record Review, Analysis, and Reporting", "description": "Review and analyze system audit records for indications of inappropriate or unusual activity." },
+        "AU-9": { "title": "Protection of Audit Information", "description": "Protect audit information and tools from unauthorized access, modification, and deletion." },
+        "AU-11": { "title": "Audit Record Retention", "description": "Retain audit records for a defined period to provide support for after-the-fact investigations." },
+        "AU-12": { "title": "Audit Record Generation", "description": "Provide audit record generation capability for the list of events defined in AU-2." }
+      }
+    },
+    "CA": {
+      "name": "Assessment, Authorization, and Monitoring",
+      "controls": {
+        "CA-2": { "title": "Control Assessments", "description": "Assess the controls in the system on a defined frequency to determine if the controls are implemented correctly." },
+        "CA-3": { "title": "Information Exchange", "description": "Approve and manage the exchange of information between the system and other systems." },
+        "CA-5": { "title": "Plan of Action and Milestones", "description": "Develop a POA&M for the system to document the planned remediation actions." },
+        "CA-6": { "title": "Authorization", "description": "Assign a senior official as the authorizing official, ensure the official authorizes the system before operating." },
+        "CA-7": { "title": "Continuous Monitoring", "description": "Develop a system-level continuous monitoring strategy and implement continuous monitoring program." },
+        "CA-8": { "title": "Penetration Testing", "description": "Conduct penetration testing on the system on a defined frequency." },
+        "CA-9": { "title": "Internal System Connections", "description": "Authorize internal connections of system components to the system." }
+      }
+    },
+    "CM": {
+      "name": "Configuration Management",
+      "controls": {
+        "CM-2": { "title": "Baseline Configuration", "description": "Develop, document, and maintain a current baseline configuration of the system." },
+        "CM-3": { "title": "Configuration Change Control", "description": "Determine the types of changes to the system that are configuration-controlled." },
+        "CM-5": { "title": "Access Restrictions for Change", "description": "Define, document, approve, and enforce physical and logical access restrictions associated with changes." },
+        "CM-6": { "title": "Configuration Settings", "description": "Establish and document configuration settings using security configuration checklists (STIGs)." },
+        "CM-7": { "title": "Least Functionality", "description": "Configure the system to provide only essential capabilities, prohibiting or restricting the use of functions, ports, protocols, software, and services not required." },
+        "CM-8": { "title": "System Component Inventory", "description": "Develop and document an inventory of system components that accurately reflects the current system." },
+        "CM-10": { "title": "Software Usage Restrictions", "description": "Use software and associated documentation in accordance with licensing agreements." },
+        "CM-14": { "title": "Signed Components", "description": "Prevent the installation of software without verification that the component is signed using a certificate recognized and approved by the organization." }
+      }
+    },
+    "CP": {
+      "name": "Contingency Planning",
+      "controls": {
+        "CP-1": { "title": "Policy and Procedures", "description": "Develop, document, and disseminate contingency planning policy and procedures." },
+        "CP-2": { "title": "Contingency Plan", "description": "Develop a contingency plan for the system that identifies essential missions and business functions." },
+        "CP-4": { "title": "Contingency Plan Testing", "description": "Test the contingency plan for the system on a defined frequency." },
+        "CP-6": { "title": "Alternate Storage Site", "description": "Establish an alternate storage site for the system including necessary agreements." },
+        "CP-9": { "title": "System Backup", "description": "Conduct backups of user-level information, system-level information, and system documentation." },
+        "CP-10": { "title": "System Recovery and Reconstitution", "description": "Provide for the recovery and reconstitution of the system to a known state after disruption." }
+      }
+    },
+    "IA": {
+      "name": "Identification and Authentication",
+      "controls": {
+        "IA-2": { "title": "Identification and Authentication (Organizational Users)", "description": "Uniquely identify and authenticate organizational users." },
+        "IA-2(1)": { "title": "MFA to Privileged Accounts", "description": "Implement MFA for access to privileged accounts." },
+        "IA-2(2)": { "title": "MFA to Non-Privileged Accounts", "description": "Implement MFA for access to non-privileged accounts." },
+        "IA-2(12)": { "title": "Acceptance of PIV Credentials", "description": "Accept and electronically verify Personal Identity Verification (PIV) credentials." },
+        "IA-4": { "title": "Identifier Management", "description": "Manage system identifiers by receiving authorization from designated official to assign identifier." },
+        "IA-5": { "title": "Authenticator Management", "description": "Manage system authenticators including verifying identity of individual/device receiving authenticator." },
+        "IA-5(1)": { "title": "Authenticator Management | Password-Based Authentication", "description": "Enforce password complexity, expiration, reuse restrictions, and temporary initial password change on first use." },
+        "IA-5(2)": { "title": "Authenticator Management | Public Key-Based Authentication", "description": "Require the validation of PKI certificates." },
+        "IA-7": { "title": "Cryptographic Module Authentication", "description": "Implement mechanisms for authentication to a cryptographic module that meet requirements of applicable federal laws for such authentication." },
+        "IA-8": { "title": "Identification and Authentication (Non-Organizational Users)", "description": "Uniquely identify and authenticate non-organizational users." }
+      }
+    },
+    "IR": {
+      "name": "Incident Response",
+      "controls": {
+        "IR-4": { "title": "Incident Handling", "description": "Implement an incident handling capability for incidents including preparation, detection and analysis, containment, eradication, and recovery." },
+        "IR-5": { "title": "Incident Monitoring", "description": "Track and document incidents." },
+        "IR-6": { "title": "Incident Reporting", "description": "Require personnel to report suspected incidents to the incident response capability within a defined time period." },
+        "IR-8": { "title": "Incident Response Plan", "description": "Develop and implement an incident response plan." }
+      }
+    },
+    "RA": {
+      "name": "Risk Assessment",
+      "controls": {
+        "RA-3": { "title": "Risk Assessment", "description": "Conduct a risk assessment for the system." },
+        "RA-5": { "title": "Vulnerability Monitoring and Scanning", "description": "Monitor and scan for vulnerabilities in the system on a defined frequency." },
+        "RA-5(2)": { "title": "Vulnerability Scanning | Update Vulnerabilities to Be Scanned", "description": "Update the system vulnerabilities scanned before each scan and when new vulnerabilities are identified." },
+        "RA-5(5)": { "title": "Vulnerability Scanning | Privileged Access", "description": "Implement privileged access authorization to operating systems, middleware, and applications for vulnerability scanning." }
+      }
+    },
+    "SA": {
+      "name": "System and Services Acquisition",
+      "controls": {
+        "SA-10": { "title": "Developer Configuration Management", "description": "Require developers to perform configuration management during development." },
+        "SA-11": { "title": "Developer Testing and Evaluation", "description": "Require developers to create and implement security assessment plan, perform security testing/evaluation." },
+        "SA-15": { "title": "Development Process, Standards, and Tools", "description": "Require developer to follow a documented development process that explicitly addresses security requirements." }
+      }
+    },
+    "SC": {
+      "name": "System and Communications Protection",
+      "controls": {
+        "SC-5": { "title": "Denial-of-Service Protection", "description": "Protect against or limit the effects of denial-of-service attacks." },
+        "SC-7": { "title": "Boundary Protection", "description": "Monitor and control communications at the external boundary and key internal boundaries." },
+        "SC-8": { "title": "Transmission Confidentiality and Integrity", "description": "Implement cryptographic mechanisms to prevent unauthorized disclosure during transmission." },
+        "SC-8(1)": { "title": "Transmission Confidentiality | Cryptographic Protection", "description": "Implement cryptographic mechanisms to prevent unauthorized disclosure of information and detect changes during transmission." },
+        "SC-12": { "title": "Cryptographic Key Establishment and Management", "description": "Establish and manage cryptographic keys for required cryptography." },
+        "SC-13": { "title": "Cryptographic Protection", "description": "Determine the cryptographic uses required and implement FIPS 140-validated cryptographic modules." },
+        "SC-28": { "title": "Protection of Information at Rest", "description": "Protect the confidentiality and integrity of information at rest." },
+        "SC-28(1)": { "title": "Protection of Information at Rest | Cryptographic Protection", "description": "Implement cryptographic mechanisms to prevent unauthorized disclosure and modification of information at rest." },
+        "SC-39": { "title": "Process Isolation", "description": "Maintain a separate execution domain for each executing process." }
+      }
+    },
+    "SI": {
+      "name": "System and Information Integrity",
+      "controls": {
+        "SI-2": { "title": "Flaw Remediation", "description": "Identify, report, and correct system flaws; test software updates related to flaw remediation." },
+        "SI-3": { "title": "Malicious Code Protection", "description": "Implement malicious code protection mechanisms at system entry/exit points." },
+        "SI-4": { "title": "System Monitoring", "description": "Monitor the system to detect attacks, unauthorized connections, and unusual activity." },
+        "SI-6": { "title": "Security and Privacy Function Verification", "description": "Verify the correct operation of security and privacy functions." },
+        "SI-7": { "title": "Software, Firmware, and Information Integrity", "description": "Employ integrity verification tools to detect unauthorized changes to software, firmware, and information." },
+        "SI-7(1)": { "title": "Software Integrity | Integrity Checks", "description": "Perform an integrity check of software on a defined frequency and upon startup, on-demand." },
+        "SI-7(6)": { "title": "Software Integrity | Cryptographic Protection", "description": "Implement cryptographic mechanisms to detect unauthorized changes to software, firmware, and information." }
+      }
+    },
+    "SR": {
+      "name": "Supply Chain Risk Management",
+      "controls": {
+        "SR-1": { "title": "Policy and Procedures", "description": "Develop and disseminate supply chain risk management policy." },
+        "SR-2": { "title": "Supply Chain Risk Management Plan", "description": "Develop and update a plan for managing supply chain risks." },
+        "SR-3": { "title": "Supply Chain Controls and Processes", "description": "Establish a process to identify and address weaknesses in supply chain." },
+        "SR-5": { "title": "Acquisition Strategies, Tools, and Methods", "description": "Employ acquisition strategies, contract tools, and procurement methods to protect against supply chain threats." },
+        "SR-11": { "title": "Component Authenticity", "description": "Develop and implement anti-counterfeit policy and procedures to detect counterfeit components." }
+      }
+    }
+  }
+}

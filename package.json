@@ -1,0 +1,38 @@
+{
+  "name": "@cloudcraftwithfranck/govcloud-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing principal-level GovCloud compliance expertise. FedRAMP, NIST 800-53, Azure GCC High, Platform One, Big Bang, Chainguard.",
+  "main": "dist/index.js",
+  "bin": {
+    "govcloud-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp", "fedramp", "nist-800-53", "azure", "govcloud",
+    "devSecOps", "compliance", "platform-one", "bicep",
+    "dod", "il4", "chainguard", "iron-bank", "ato"
+  ],
+  "author": "Franck Kengne <franck@cloudcraftwithfranck.org>",
+  "license": "MIT",
+  "homepage": "https://cloudcraftwithfranck.org/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudcwfranck/govcloud-mcp"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "node-fetch": "^3.3.2",
+    "tsx": "^4.19.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.50",
+    "typescript": "^5.8.3"
+  }
+}

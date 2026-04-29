@@ -1,0 +1,103 @@
+import { z } from 'zod';
+import { anthropic, MODEL, BASE_SYSTEM_PROMPT, callSiteApi } from '../../client.js';
+
+export const bicepRemediateTool = {
+  name: 'bicep_remediate',
+  description:
+    'Auto-remediate Azure Bicep code to meet FedRAMP or DoD IL compliance targets. Returns hardened Bicep with a change log mapping each modification to the NIST 800-53 control it addresses.',
+  inputSchema: {
+    type: 'object' as const,
+    properties: {
+      bicepCode: {
+        type: 'string',
+        description: 'The Bicep code to harden',
+      },
+      targetLevel: {
+        type: 'string',
+        enum: ['fedramp-moderate', 'fedramp-high', 'il4', 'il5'],
+        description: 'Compliance target level',
+      },
+      analysisJson: {
+        type: 'string',
+        description: 'Optional: previous bicep_analyze output to avoid re-analysis',
+      },
+    },
+    required: ['bicepCode'],
+  },
+};
+
+const Schema = z.object({
+  bicepCode: z.string().min(1),
+  targetLevel: z
+    .enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5'])
+    .default('fedramp-high'),
+  analysisJson: z.string().optional(),
+});
+
+export async function handleBicepRemediate(args: unknown): Promise<string> {
+  const { bicepCode, targetLevel, analysisJson } = Schema.parse(args);
+
+  // Try site API first; fall back to direct Claude call
+  try {
+    const data = (await callSiteApi('/api/bicep-remediate', {
+      bicepCode,
+      targetLevel,
+      analysisJson,
+    })) as { hardenedBicep?: string; changelog?: unknown[]; scoreBefore?: number; scoreAfter?: number };
+
+    const lines: string[] = [];
+    lines.push(`## Hardened Bicep — ${targetLevel.toUpperCase()}`);
+    lines.push('');
+    if (data.scoreBefore !== undefined && data.scoreAfter !== undefined) {
+      lines.push(`**Score:** ${data.scoreBefore}/100 → ${data.scoreAfter}/100`);
+      lines.push('');
+    }
+    if (data.hardenedBicep) {
+      lines.push('### Hardened Bicep');
+      lines.push('');
+      lines.push('```bicep');
+      lines.push(data.hardenedBicep);
+      lines.push('```');
+      lines.push('');
+    }
+    if (data.changelog && Array.isArray(data.changelog) && data.changelog.length > 0) {
+      lines.push('### Change Log');
+      lines.push('');
+      lines.push('| Change | Control ID | Rationale |');
+      lines.push('|--------|-----------|-----------|');
+      for (const entry of data.changelog as Array<{ change?: string; controlId?: string; rationale?: string }>) {
+        lines.push(`| ${entry.change ?? ''} | ${entry.controlId ?? ''} | ${entry.rationale ?? ''} |`);
+      }
+    }
+    return lines.join('\n');
+  } catch {
+    // Fall back to Claude for remediation if site API not available
+    const contextPrompt = analysisJson
+      ? `\n\nPrevious analysis:\n${analysisJson}`
+      : '';
+
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 8192,
+      system:
+        BASE_SYSTEM_PROMPT +
+        `\n\nYou are remediating Bicep code for ${targetLevel} compliance. Return:
+1. The complete hardened Bicep code block
+2. Score improvement estimate (before → after)
+3. Changelog table: | Change | Control ID | Rationale |
+
+Map every change to the specific NIST 800-53 Rev 5 control it addresses.`,
+      messages: [
+        {
+          role: 'user',
+          content: `Harden this Bicep code for ${targetLevel} compliance:${contextPrompt}
+
+\`\`\`bicep
+${bicepCode}
+\`\`\``,
+        },
+      ],
+    });
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  }
+}
