@@ -26,7 +26,7 @@ export const controlNarrativeTool = {
       },
       cspLevel: {
         type: 'string',
-        enum: ['azure-commercial', 'azure-government', 'azure-gcc-high'],
+        enum: ['azure-commercial', 'azure-government', 'azure-gcc-high', 'gcc-high', 'azure-gov'],
         description: 'Cloud service provider level',
       },
       impactLevel: {
@@ -48,7 +48,7 @@ const Schema = z.object({
   systemName: z.string().max(500),
   systemDescription: z.string().max(2000),
   azureServices: z.array(z.string().max(500)).max(50),
-  cspLevel: z.enum(['azure-commercial', 'azure-government', 'azure-gcc-high']),
+  cspLevel: z.enum(['azure-commercial', 'azure-government', 'azure-gcc-high', 'gcc-high', 'azure-gov']),
   impactLevel: z.enum(['low', 'moderate', 'high', 'il4', 'il5']),
   organizationName: z.string().max(500).optional(),
 });
@@ -69,7 +69,10 @@ Requirements:
 - This will be read by an Authorizing Official. Make it precise.`;
 
 export async function handleControlNarrative(args: unknown): Promise<string> {
-  return runTool('control_narrative', args, Schema, async ({ controlId, systemName, systemDescription, azureServices, cspLevel, impactLevel, organizationName }) => {
+  return runTool('control_narrative', args, Schema, async ({ controlId, systemName, systemDescription, azureServices, cspLevel: rawCspLevel, impactLevel, organizationName }) => {
+    const cspLevel = rawCspLevel
+      .replace('gcc-high', 'azure-gcc-high')
+      .replace('azure-gov', 'azure-government');
     const controlFamily = controlId.split('-')[0];
 
     // Fetch ESLZ grounding context in parallel — graceful degradation on failure

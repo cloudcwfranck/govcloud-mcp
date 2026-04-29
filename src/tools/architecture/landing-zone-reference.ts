@@ -26,7 +26,7 @@ export const landingZoneReferenceTool = {
       },
       csp: {
         type: 'string',
-        enum: ['azure-government', 'azure-gcc-high'],
+        enum: ['azure-government', 'azure-gcc-high', 'gcc-high', 'azure-gov'],
         description: 'Cloud service provider environment',
       },
       missionType: {
@@ -46,7 +46,7 @@ export const landingZoneReferenceTool = {
 const Schema = z.object({
   scenario: z.enum(['greenfield-government', 'brownfield-migration', 'sovereign-landing-zone', 'mission-landing-zone']),
   impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
-  csp: z.enum(['azure-government', 'azure-gcc-high']),
+  csp: z.enum(['azure-government', 'azure-gcc-high', 'gcc-high', 'azure-gov']),
   missionType: z.string().min(1).max(500),
   subscriptionCount: z.enum(['1-3', '4-10', '11-50', '50+']),
 });
@@ -82,7 +82,13 @@ FOR IL4/IL5:
 FORMAT: Clear markdown with tables. Engineers implement this — be prescriptive. Include specific resource names, CIDR ranges, and SKUs. Reference ESLZ by name to establish authority.`;
 
 export async function handleLandingZoneReference(args: unknown): Promise<string> {
-  return runTool('landing_zone_reference', args, Schema, async (params) => {
+  return runTool('landing_zone_reference', args, Schema, async (params0) => {
+    const params = {
+      ...params0,
+      csp: (params0.csp as string)
+        .replace('gcc-high', 'azure-gcc-high')
+        .replace('azure-gov', 'azure-government') as typeof params0.csp,
+    };
     // Fetch ESLZ grounding content in parallel
     const [archDoc, allPolicies] = await Promise.all([
       fetchEslzContent('README.md'),

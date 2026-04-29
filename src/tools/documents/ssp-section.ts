@@ -3,6 +3,7 @@ import { anthropic, MODEL } from '../../client.js';
 import { DOCUMENT_SYSTEM } from '../../prompts/system-prompts.js';
 import { sspSectionTemplate } from '../../prompts/templates.js';
 import { runTool, getTokenBudget } from '../../utils/tool-runner.js';
+import { withRetry } from '../../utils/retry.js';
 
 export const sspSectionTool = {
   name: 'ssp_section',
@@ -37,7 +38,7 @@ export const sspSectionTool = {
       },
       impactLevel: {
         type: 'string',
-        enum: ['fedramp-moderate', 'fedramp-high', 'il4', 'il5'],
+        enum: ['fedramp-moderate', 'fedramp-high', 'il4', 'il5', 'moderate', 'high', 'dod-il4', 'dod-il5'],
       },
       additionalContext: {
         type: 'string',
@@ -62,21 +63,30 @@ const Schema = z.object({
   systemName: z.string().max(500),
   systemDescription: z.string().max(2000),
   azureServices: z.array(z.string().max(500)).min(1).max(50),
-  impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5']),
+  impactLevel: z.enum(['fedramp-moderate', 'fedramp-high', 'il4', 'il5', 'moderate', 'high', 'dod-il4', 'dod-il5']),
   additionalContext: z.string().max(500).optional(),
 });
 
 export async function handleSspSection(args: unknown): Promise<string> {
-  return runTool('ssp_section', args, Schema, async ({ section, systemName, systemDescription, azureServices, impactLevel, additionalContext }) => {
+  return runTool('ssp_section', args, Schema, async ({ section, systemName, systemDescription, azureServices, impactLevel: rawImpactLevel, additionalContext }) => {
+    const impactLevel = rawImpactLevel
+      .replace('dod-il4', 'il4')
+      .replace('dod-il5', 'il5')
+      .replace(/^moderate$/, 'fedramp-moderate')
+      .replace(/^high$/, 'fedramp-high');
+
     const systemInfo = `${systemName} — ${systemDescription}`;
     const prompt = sspSectionTemplate(section, systemInfo, azureServices, impactLevel, additionalContext);
 
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: getTokenBudget('ssp_section'),
-      system: DOCUMENT_SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const response = await withRetry(
+      () => anthropic.messages.create({
+        model: MODEL,
+        max_tokens: getTokenBudget('ssp_section'),
+        system: DOCUMENT_SYSTEM,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      { toolName: 'ssp_section' }
+    );
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   });
